@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clear Old Storage - Smart Doctor Assistant</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        .info {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            border-left: 4px solid #2196F3;
+        }
+        .warning {
+            background: #fff3e0;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            border-left: 4px solid #ff9800;
+        }
+        .success {
+            background: #e8f5e9;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            border-left: 4px solid #4caf50;
+        }
+        button {
+            background: #2196F3;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        button:hover {
+            background: #1976D2;
+        }
+        button.danger {
+            background: #f44336;
+        }
+        button.danger:hover {
+            background: #d32f2f;
+        }
+        .storage-list {
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 15px 0;
+            font-family: monospace;
+            font-size: 14px;
+        }
+        .storage-item {
+            padding: 8px;
+            border-bottom: 1px solid #ddd;
+        }
+        .storage-item:last-child {
+            border-bottom: none;
+        }
+        .old-key {
+            color: #f44336;
+            font-weight: bold;
+        }
+        .new-key {
+            color: #4caf50;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Clear Old Storage - Smart Doctor Assistant</h1>
+
+        <div class="info">
+            <strong>ℹ️ What this does:</strong><br>
+            This tool will clear old global localStorage keys and show you the new user-scoped keys.
+            Each user now has isolated chat history to prevent conversation sharing.
+        </div>
+
+        <div id="status"></div>
+
+        <h2>Current localStorage Keys:</h2>
+        <div id="storageList" class="storage-list"></div>
+
+        <div style="margin-top: 20px;">
+            <button onclick="analyzeStorage()">🔍 Analyze Storage</button>
+            <button class="danger" onclick="clearOldKeys()">🗑️ Clear Old Global Keys</button>
+            <button onclick="clearAllStorage()">⚠️ Clear ALL Storage (Fresh Start)</button>
+        </div>
+
+        <div style="margin-top: 20px;">
+            <button onclick="window.location.href='/'">← Back to App</button>
+        </div>
+    </div>
+
+    <script>
+        function analyzeStorage() {
+            const statusDiv = document.getElementById('status');
+            const listDiv = document.getElementById('storageList');
+
+            const oldKeys = [];
+            const newKeys = [];
+            const otherKeys = [];
+
+            // Scan all localStorage keys
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+
+                // Old global keys (these cause the sharing bug)
+                if (key === 'smart_doctor_messages' || key === 'smart_doctor_session_id') {
+                    oldKeys.push(key);
+                }
+                // New user-scoped keys (correct implementation)
+                else if (key.startsWith('smart_doctor_messages_') || key.startsWith('smart_doctor_session_id_')) {
+                    newKeys.push(key);
+                }
+                // User identifier
+                else if (key === 'smart_doctor_user_email') {
+                    otherKeys.push(key);
+                }
+                else {
+                    otherKeys.push(key);
+                }
+            }
+
+            let html = '';
+
+            if (oldKeys.length > 0) {
+                html += '<div class="warning"><strong>⚠️ Old Global Keys Found (CAUSING SHARED CHAT BUG):</strong></div>';
+                oldKeys.forEach(key => {
+                    const value = localStorage.getItem(key);
+                    const preview = value.length > 100 ? value.substring(0, 100) + '...' : value;
+                    html += `<div class="storage-item"><span class="old-key">${key}</span>: ${preview}</div>`;
+                });
+            }
+
+            if (newKeys.length > 0) {
+                html += '<div class="success"><strong>✅ New User-Scoped Keys (CORRECT):</strong></div>';
+                newKeys.forEach(key => {
+                    const value = localStorage.getItem(key);
+                    const preview = value.length > 100 ? value.substring(0, 100) + '...' : value;
+                    html += `<div class="storage-item"><span class="new-key">${key}</span>: ${preview}</div>`;
+                });
+            }
+
+            if (otherKeys.length > 0) {
+                html += '<div class="info"><strong>ℹ️ Other Keys:</strong></div>';
+                otherKeys.forEach(key => {
+                    const value = localStorage.getItem(key);
+                    const preview = value.length > 100 ? value.substring(0, 100) + '...' : value;
+                    html += `<div class="storage-item">${key}: ${preview}</div>`;
+                });
+            }
+
+            if (html === '') {
+                html = '<div class="info">No Smart Doctor Assistant keys found in localStorage.</div>';
+            }
+
+            listDiv.innerHTML = html;
+
+            // Show status
+            if (oldKeys.length > 0) {
+                statusDiv.innerHTML = `
+                    <div class="warning">
+                        <strong>⚠️ PROBLEM FOUND!</strong><br>
+                        You have ${oldKeys.length} old global storage key(s) that are causing chat to be shared across users.<br>
+                        Click "Clear Old Global Keys" below to fix this issue.
+                    </div>
+                `;
+            } else if (newKeys.length > 0) {
+                statusDiv.innerHTML = `
+                    <div class="success">
+                        <strong>✅ Storage is correctly configured!</strong><br>
+                        You have ${newKeys.length} user-scoped key(s). Each user has isolated chat history.
+                    </div>
+                `;
+            } else {
+                statusDiv.innerHTML = `
+                    <div class="info">
+                        <strong>ℹ️ No chat history found.</strong><br>
+                        Start chatting in the app to create user-scoped storage.
+                    </div>
+                `;
+            }
+        }
+
+        function clearOldKeys() {
+            const oldKeys = ['smart_doctor_messages', 'smart_doctor_session_id'];
+            let cleared = 0;
+
+            oldKeys.forEach(key => {
+                if (localStorage.getItem(key)) {
+                    localStorage.removeItem(key);
+                    cleared++;
+                }
+            });
+
+            const statusDiv = document.getElementById('status');
+            statusDiv.innerHTML = `
+                <div class="success">
+                    <strong>✅ Cleared ${cleared} old global key(s)!</strong><br>
+                    The shared chat bug has been fixed. Refresh the app to start with clean user-scoped storage.
+                </div>
+            `;
+
+            // Re-analyze
+            analyzeStorage();
+        }
+
+        function clearAllStorage() {
+            if (confirm('⚠️ This will clear ALL localStorage data including your user ID. Are you sure?')) {
+                localStorage.clear();
+
+                const statusDiv = document.getElementById('status');
+                statusDiv.innerHTML = `
+                    <div class="success">
+                        <strong>✅ All localStorage cleared!</strong><br>
+                        Refresh the app to start completely fresh. A new user ID will be generated.
+                    </div>
+                `;
+
+                analyzeStorage();
+            }
+        }
+
+        // Auto-analyze on load
+        window.addEventListener('load', analyzeStorage);
+    </script>
+</body>
+</html>

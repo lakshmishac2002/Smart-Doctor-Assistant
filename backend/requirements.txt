@@ -1,0 +1,43 @@
+# Core Framework
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+pydantic==2.5.0
+pydantic[email]==2.5.0
+
+# Database
+sqlalchemy==2.0.23
+psycopg2-binary==2.9.9
+alembic==1.12.1
+
+# Async Support
+aiofiles==23.2.1
+httpx==0.25.1
+
+# FREE LLM Integration
+requests==2.31.0
+
+# FREE Email (Gmail SMTP) - Built into Python
+# No additional packages needed - uses smtplib
+
+# External API Integration (Optional)
+google-api-python-client==2.108.0
+google-auth-httplib2==0.1.1
+google-auth-oauthlib==1.1.0
+
+# Utilities
+python-dotenv==1.0.0
+python-multipart==0.0.6
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+
+# Production Server
+gunicorn==21.2.0
+
+# Monitoring & Performance
+psutil==5.9.6
+
+# Development (optional in production)
+pytest==7.4.3
+pytest-asyncio==0.21.1
+black==23.11.0
+flake8==6.1.0

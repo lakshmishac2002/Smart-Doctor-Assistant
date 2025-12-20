@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python test_email_debug.py:*)",
+      "Bash(findstr:*)"
+    ]
+  }
+}

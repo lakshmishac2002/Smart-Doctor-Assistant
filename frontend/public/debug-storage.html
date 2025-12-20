@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Storage - Smart Doctor Assistant</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 14px;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .status-box {
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            border-left: 4px solid;
+        }
+
+        .status-box.success {
+            background: #e8f5e9;
+            border-color: #4caf50;
+            color: #2e7d32;
+        }
+
+        .status-box.error {
+            background: #ffebee;
+            border-color: #f44336;
+            color: #c62828;
+        }
+
+        .status-box.warning {
+            background: #fff3e0;
+            border-color: #ff9800;
+            color: #e65100;
+        }
+
+        .status-box.info {
+            background: #e3f2fd;
+            border-color: #2196f3;
+            color: #1565c0;
+        }
+
+        .status-box h3 {
+            margin-bottom: 10px;
+            font-size: 18px;
+        }
+
+        .status-box p {
+            margin: 5px 0;
+            line-height: 1.6;
+        }
+
+        .keys-section {
+            margin-top: 30px;
+        }
+
+        .keys-section h2 {
+            font-size: 20px;
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        .key-item {
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+        }
+
+        .key-item.old {
+            background: #ffebee;
+            border-left: 4px solid #f44336;
+        }
+
+        .key-item.new {
+            background: #e8f5e9;
+            border-left: 4px solid #4caf50;
+        }
+
+        .key-name {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 8px;
+            word-break: break-all;
+        }
+
+        .key-value {
+            color: #666;
+            max-height: 200px;
+            overflow-y: auto;
+            padding: 10px;
+            background: white;
+            border-radius: 4px;
+            margin-top: 8px;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+
+        .buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        button.primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        button.primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        button.danger {
+            background: #f44336;
+            color: white;
+        }
+
+        button.danger:hover {
+            background: #d32f2f;
+        }
+
+        button.secondary {
+            background: #e0e0e0;
+            color: #333;
+        }
+
+        button.secondary:hover {
+            background: #d0d0d0;
+        }
+
+        .stat {
+            display: inline-block;
+            background: #f5f5f5;
+            padding: 8px 16px;
+            border-radius: 20px;
+            margin: 5px;
+            font-size: 13px;
+        }
+
+        .stat strong {
+            color: #667eea;
+        }
+
+        #refreshStatus {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            display: none;
+        }
+
+        .auto-refresh {
+            text-align: center;
+            padding: 10px;
+            background: #e3f2fd;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 13px;
+            color: #1565c0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔍 Storage Debugger</h1>
+            <p>Smart Doctor Assistant - localStorage Analysis Tool</p>
+        </div>
+
+        <div class="content">
+            <div class="auto-refresh">
+                ⏱️ Auto-refreshing every 3 seconds... <span id="countdown">3</span>s
+            </div>
+
+            <div id="statusContainer"></div>
+
+            <div class="keys-section">
+                <h2>📦 localStorage Contents</h2>
+                <div id="keysContainer"></div>
+            </div>
+
+            <div class="buttons">
+                <button class="primary" onclick="refreshAnalysis()">🔄 Refresh Now</button>
+                <button class="danger" onclick="clearOldKeys()">🗑️ Clear Old Global Keys</button>
+                <button class="danger" onclick="clearAllStorage()">⚠️ Clear ALL Storage</button>
+                <button class="secondary" onclick="window.location.href='/'">← Back to App</button>
+            </div>
+
+            <div id="refreshStatus"></div>
+        </div>
+    </div>
+
+    <script>
+        let autoRefreshInterval;
+        let countdownInterval;
+        let countdownSeconds = 3;
+
+        function analyzeStorage() {
+            const userEmail = localStorage.getItem('smart_doctor_user_email');
+
+            const oldKeys = [];
+            const newKeys = [];
+            const otherKeys = [];
+
+            // Scan all localStorage
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+
+                if (key === 'smart_doctor_messages' || key === 'smart_doctor_session_id') {
+                    oldKeys.push({ key, value: localStorage.getItem(key) });
+                } else if (key.startsWith('smart_doctor_messages_') || key.startsWith('smart_doctor_session_id_')) {
+                    newKeys.push({ key, value: localStorage.getItem(key) });
+                } else if (key.startsWith('smart_doctor')) {
+                    otherKeys.push({ key, value: localStorage.getItem(key) });
+                }
+            }
+
+            return { userEmail, oldKeys, newKeys, otherKeys };
+        }
+
+        function displayStatus() {
+            const { userEmail, oldKeys, newKeys, otherKeys } = analyzeStorage();
+            const statusContainer = document.getElementById('statusContainer');
+
+            let statusHTML = '';
+
+            // User info
+            statusHTML += `
+                <div class="status-box info">
+                    <h3>👤 Current User</h3>
+                    <p><strong>Email:</strong> ${userEmail || '❌ Not set!'}</p>
+                </div>
+            `;
+
+            // Overall status
+            if (oldKeys.length > 0) {
+                statusHTML += `
+                    <div class="status-box error">
+                        <h3>❌ PROBLEM DETECTED</h3>
+                        <p><strong>${oldKeys.length} old global key(s) found!</strong></p>
+                        <p>These keys are causing the shared chat bug. All users see the same conversation.</p>
+                        <p><strong>Action:</strong> Click "Clear Old Global Keys" button below.</p>
+                    </div>
+                `;
+            } else if (newKeys.length > 0) {
+                statusHTML += `
+                    <div class="status-box success">
+                        <h3>✅ STORAGE IS CORRECT</h3>
+                        <p><strong>${newKeys.length} user-scoped key(s) found!</strong></p>
+                        <p>Each user has isolated chat history. No sharing between users.</p>
+                    </div>
+                `;
+            } else {
+                statusHTML += `
+                    <div class="status-box warning">
+                        <h3>⚠️ NO CHAT DATA</h3>
+                        <p>No conversation history found. This is normal for new users.</p>
+                        <p>Start chatting in the app to create user-scoped storage.</p>
+                    </div>
+                `;
+            }
+
+            // Statistics
+            statusHTML += `
+                <div class="status-box info">
+                    <h3>📊 Statistics</h3>
+                    <p>
+                        <span class="stat"><strong>Old Keys:</strong> ${oldKeys.length}</span>
+                        <span class="stat"><strong>New Keys:</strong> ${newKeys.length}</span>
+                        <span class="stat"><strong>Other Keys:</strong> ${otherKeys.length}</span>
+                        <span class="stat"><strong>Total:</strong> ${localStorage.length}</span>
+                    </p>
+                </div>
+            `;
+
+            statusContainer.innerHTML = statusHTML;
+        }
+
+        function displayKeys() {
+            const { oldKeys, newKeys, otherKeys } = analyzeStorage();
+            const keysContainer = document.getElementById('keysContainer');
+
+            let keysHTML = '';
+
+            // Old keys (bad)
+            if (oldKeys.length > 0) {
+                keysHTML += '<h3 style="color: #f44336; margin-bottom: 10px;">🚨 Old Global Keys (CAUSING BUG)</h3>';
+                oldKeys.forEach(({ key, value }) => {
+                    const preview = value.length > 500 ? value.substring(0, 500) + '... (truncated)' : value;
+                    keysHTML += `
+                        <div class="key-item old">
+                            <div class="key-name">🔴 ${key}</div>
+                            <div class="key-value">${escapeHtml(preview)}</div>
+                        </div>
+                    `;
+                });
+            }
+
+            // New keys (good)
+            if (newKeys.length > 0) {
+                keysHTML += '<h3 style="color: #4caf50; margin: 20px 0 10px 0;">✅ User-Scoped Keys (CORRECT)</h3>';
+                newKeys.forEach(({ key, value }) => {
+                    const preview = value.length > 500 ? value.substring(0, 500) + '... (truncated)' : value;
+                    keysHTML += `
+                        <div class="key-item new">
+                            <div class="key-name">🟢 ${key}</div>
+                            <div class="key-value">${escapeHtml(preview)}</div>
+                        </div>
+                    `;
+                });
+            }
+
+            // Other keys
+            if (otherKeys.length > 0) {
+                keysHTML += '<h3 style="color: #2196f3; margin: 20px 0 10px 0;">ℹ️ Other Keys</h3>';
+                otherKeys.forEach(({ key, value }) => {
+                    const preview = value.length > 200 ? value.substring(0, 200) + '... (truncated)' : value;
+                    keysHTML += `
+                        <div class="key-item">
+                            <div class="key-name">${key}</div>
+                            <div class="key-value">${escapeHtml(preview)}</div>
+                        </div>
+                    `;
+                });
+            }
+
+            if (keysHTML === '') {
+                keysHTML = '<p style="color: #999; text-align: center; padding: 40px;">No Smart Doctor keys found in localStorage</p>';
+            }
+
+            keysContainer.innerHTML = keysHTML;
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function refreshAnalysis() {
+            displayStatus();
+            displayKeys();
+
+            // Reset countdown
+            countdownSeconds = 3;
+            document.getElementById('countdown').textContent = countdownSeconds;
+        }
+
+        function clearOldKeys() {
+            const { oldKeys } = analyzeStorage();
+
+            if (oldKeys.length === 0) {
+                showRefreshStatus('info', 'ℹ️ No old keys to clear!');
+                return;
+            }
+
+            if (confirm(`⚠️ Clear ${oldKeys.length} old global key(s)?\n\nThis will fix the shared chat bug.`)) {
+                oldKeys.forEach(({ key }) => {
+                    localStorage.removeItem(key);
+                });
+
+                showRefreshStatus('success', `✅ Cleared ${oldKeys.length} old key(s)! The shared chat bug is fixed. Refresh the app.`);
+                refreshAnalysis();
+            }
+        }
+
+        function clearAllStorage() {
+            if (confirm('⚠️ Clear ALL localStorage?\n\nThis will:\n- Remove your user ID\n- Delete all chat history\n- Reset everything\n\nAre you sure?')) {
+                const count = localStorage.length;
+                localStorage.clear();
+                showRefreshStatus('success', `✅ Cleared ${count} key(s)! Refresh the app to start fresh.`);
+                refreshAnalysis();
+            }
+        }
+
+        function showRefreshStatus(type, message) {
+            const statusDiv = document.getElementById('refreshStatus');
+            statusDiv.className = `status-box ${type}`;
+            statusDiv.innerHTML = `<p>${message}</p>`;
+            statusDiv.style.display = 'block';
+
+            setTimeout(() => {
+                statusDiv.style.display = 'none';
+            }, 5000);
+        }
+
+        function updateCountdown() {
+            countdownSeconds--;
+            if (countdownSeconds <= 0) {
+                countdownSeconds = 3;
+                refreshAnalysis();
+            }
+            document.getElementById('countdown').textContent = countdownSeconds;
+        }
+
+        // Initialize
+        window.addEventListener('load', () => {
+            refreshAnalysis();
+
+            // Auto-refresh every 3 seconds
+            autoRefreshInterval = setInterval(refreshAnalysis, 3000);
+
+            // Update countdown every second
+            countdownInterval = setInterval(updateCountdown, 1000);
+        });
+
+        // Cleanup on unload
+        window.addEventListener('beforeunload', () => {
+            clearInterval(autoRefreshInterval);
+            clearInterval(countdownInterval);
+        });
+    </script>
+</body>
+</html>
