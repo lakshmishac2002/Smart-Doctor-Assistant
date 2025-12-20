@@ -248,7 +248,10 @@
 .chat-area {
   display: flex;
   flex-direction: column;
-  background: #f7fafc;
+  background: #ffffff !important;
+  min-height: 100vh;
+  position: relative;
+  isolation: isolate;
 }
 
 .chat-header {
@@ -299,7 +302,22 @@
   flex: 1;
   overflow-y: auto;
   padding: 30px;
-  background: #f7fafc;
+  background: #ffffff !important;
+  position: relative;
+  z-index: 1;
+}
+
+/* Create fixed white background layer for messages */
+.messages-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: #ffffff;
+  z-index: -1;
+  pointer-events: none;
 }
 
 .welcome-card {
@@ -737,4 +755,54 @@
   .message-bubble {
     max-width: 85%;
   }
+}
+
+/* ==================== COMPREHENSIVE WHITE BACKGROUND FIX ==================== */
+/* Fixes both chat area color and right panel color issues */
+
+/* Ensure main dashboard container doesn't bleed gradients */
+.patient-dashboard {
+  background: #f7fafc;
+  isolation: isolate;
+}
+
+/* Force chat area to be completely white */
+.chat-area,
+.chat-area * {
+  background-image: none !important;
+}
+
+.chat-area {
+  background: #ffffff !important;
+}
+
+/* Ensure no parent gradients leak into chat */
+.patient-dashboard > .chat-area {
+  background: #ffffff !important;
+  position: relative;
+}
+
+/* Additional layer to prevent any gradient bleed */
+.chat-area::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: #ffffff;
+  z-index: -2;
+  pointer-events: none;
+}
+
+/* Ensure input area stays white */
+.input-area {
+  background: #ffffff !important;
+  border-top: 1px solid #e2e8f0;
+}
+
+/* Override any inherited backgrounds in messages area */
+.messages-container,
+.messages-container > * {
+  background-image: none !important;
 }
