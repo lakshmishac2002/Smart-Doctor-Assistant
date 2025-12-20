@@ -77,10 +77,16 @@
 
 .patient-dashboard {
   display: grid;
-  grid-template-columns: 300px 1fr 320px;
+  grid-template-columns: 300px 1fr;
   height: calc(100vh - 57px);
-  background: #f7fafc;
+  background: #ffffff;
   gap: 0;
+  overflow: hidden;
+}
+
+/* Hide only right panel, keep doctors sidebar visible */
+.patient-dashboard .doctor-details-panel {
+  display: none;
 }
 
 /* Doctors Sidebar */
@@ -252,6 +258,8 @@
   min-height: 100vh;
   position: relative;
   isolation: isolate;
+  width: 100%;
+  max-width: 100%;
 }
 
 .chat-header {
@@ -301,10 +309,37 @@
 .messages-container {
   flex: 1;
   overflow-y: auto;
+  overflow-x: hidden;
   padding: 30px;
   background: #ffffff !important;
   position: relative;
   z-index: 1;
+
+  /* Smooth scrolling */
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+
+  /* Custom scrollbar for better UX */
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e0 #ffffff;
+}
+
+/* Webkit scrollbar styling */
+.messages-container::-webkit-scrollbar {
+  width: 8px;
+}
+
+.messages-container::-webkit-scrollbar-track {
+  background: #ffffff;
+}
+
+.messages-container::-webkit-scrollbar-thumb {
+  background: #cbd5e0;
+  border-radius: 4px;
+}
+
+.messages-container::-webkit-scrollbar-thumb:hover {
+  background: #a0aec0;
 }
 
 /* Create fixed white background layer for messages */
@@ -465,6 +500,10 @@
   border-top: 1px solid #e2e8f0;
   display: flex;
   gap: 15px;
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .input-area textarea {
@@ -760,9 +799,9 @@
 /* ==================== COMPREHENSIVE WHITE BACKGROUND FIX ==================== */
 /* Fixes both chat area color and right panel color issues */
 
-/* Ensure main dashboard container doesn't bleed gradients */
+/* Ensure main dashboard container is white and isolated */
 .patient-dashboard {
-  background: #f7fafc;
+  background: #ffffff !important;
   isolation: isolate;
 }
 
