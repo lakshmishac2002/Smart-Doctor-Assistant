@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <rect width="100" height="100" fill="#667eea" rx="20"/>
+  <g fill="white">
+    <!-- Stethoscope -->
+    <path d="M35 25 C35 25, 30 25, 30 30 L30 45 C30 50, 25 55, 25 60 C25 68, 32 75, 40 75 C48 75, 55 68, 55 60 C55 55, 50 50, 50 45 L50 30 C50 25, 45 25, 45 25" stroke="white" stroke-width="3" fill="none"/>
+    <circle cx="40" cy="75" r="8" fill="white"/>
+    <circle cx="35" cy="22" r="3" fill="white"/>
+    <circle cx="45" cy="22" r="3" fill="white"/>
+
+    <!-- Plus sign -->
+    <rect x="60" y="35" width="8" height="30" fill="white" rx="2"/>
+    <rect x="52" y="43" width="24" height="8" fill="white" rx="2"/>
+  </g>
+</svg>
