@@ -19,6 +19,7 @@ from db.database import get_db, init_db
 from db.models import Doctor, Patient, Appointment
 from agents.orchestrator import agent
 from mcp.server import mcp_server
+from auth.utils import hash_password, verify_password
 
 # Initialize FastAPI app
 app = FastAPI(
@@ -68,6 +69,25 @@ class DoctorStatsRequest(BaseModel):
     start_date: str
     end_date: str
 
+class SignupRequest(BaseModel):
+    name: str
+    email: EmailStr
+    password: str
+    phone: str
+    user_type: str  # "patient" or "doctor"
+    specialization: Optional[str] = None  # Only for doctors
+
+class LoginRequest(BaseModel):
+    email: EmailStr
+    password: str
+    user_type: str  # "patient" or "doctor"
+
+class AuthResponse(BaseModel):
+    success: bool
+    message: str
+    user_type: Optional[str] = None
+    user_data: Optional[Dict] = None
+
 # ==================== Startup Events ====================
 
 @app.on_event("startup")
@@ -99,6 +119,183 @@ async def health_check():
         "mcp_server": "active",
         "agent": "ready"
     }
+
+# ==================== Authentication APIs ====================
+
+@app.post("/api/auth/signup", response_model=AuthResponse)
+async def signup(request: SignupRequest, db: Session = Depends(get_db)):
+    """
+    Register a new patient or doctor account
+    """
+    try:
+        # Check if user already exists
+        if request.user_type == "patient":
+            existing_user = db.query(Patient).filter(Patient.email == request.email).first()
+            if existing_user:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Email already registered"
+                )
+
+            # Hash password
+            hashed_pwd = hash_password(request.password)
+
+            # Create new patient
+            new_patient = Patient(
+                name=request.name,
+                email=request.email,
+                password=hashed_pwd,
+                phone=request.phone
+            )
+            db.add(new_patient)
+            db.commit()
+            db.refresh(new_patient)
+
+            return AuthResponse(
+                success=True,
+                message="Patient account created successfully",
+                user_type="patient",
+                user_data={
+                    "id": new_patient.id,
+                    "name": new_patient.name,
+                    "email": new_patient.email
+                }
+            )
+
+        elif request.user_type == "doctor":
+            existing_user = db.query(Doctor).filter(Doctor.email == request.email).first()
+            if existing_user:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Email already registered"
+                )
+
+            if not request.specialization:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Specialization is required for doctors"
+                )
+
+            # Hash password
+            hashed_pwd = hash_password(request.password)
+
+            # Create new doctor with default availability
+            from datetime import time
+            new_doctor = Doctor(
+                name=request.name,
+                email=request.email,
+                password=hashed_pwd,
+                phone=request.phone,
+                specialization=request.specialization,
+                available_days=['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'],
+                available_start_time=time(9, 0),
+                available_end_time=time(17, 0),
+                slot_duration_minutes=30
+            )
+            db.add(new_doctor)
+            db.commit()
+            db.refresh(new_doctor)
+
+            return AuthResponse(
+                success=True,
+                message="Doctor account created successfully",
+                user_type="doctor",
+                user_data={
+                    "id": new_doctor.id,
+                    "name": new_doctor.name,
+                    "email": new_doctor.email,
+                    "specialization": new_doctor.specialization
+                }
+            )
+
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid user type. Must be 'patient' or 'doctor'"
+            )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Signup failed: {str(e)}"
+        )
+
+@app.post("/api/auth/login", response_model=AuthResponse)
+async def login(request: LoginRequest, db: Session = Depends(get_db)):
+    """
+    Login for patients and doctors
+    """
+    try:
+        if request.user_type == "patient":
+            user = db.query(Patient).filter(Patient.email == request.email).first()
+            if not user:
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Invalid email or password"
+                )
+
+            # Verify password
+            if not verify_password(request.password, user.password):
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Invalid email or password"
+                )
+
+            return AuthResponse(
+                success=True,
+                message="Login successful",
+                user_type="patient",
+                user_data={
+                    "id": user.id,
+                    "name": user.name,
+                    "email": user.email,
+                    "phone": user.phone
+                }
+            )
+
+        elif request.user_type == "doctor":
+            user = db.query(Doctor).filter(Doctor.email == request.email).first()
+            if not user:
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Invalid email or password"
+                )
+
+            # Verify password
+            if not verify_password(request.password, user.password):
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Invalid email or password"
+                )
+
+            return AuthResponse(
+                success=True,
+                message="Login successful",
+                user_type="doctor",
+                user_data={
+                    "id": user.id,
+                    "name": user.name,
+                    "email": user.email,
+                    "phone": user.phone,
+                    "specialization": user.specialization
+                }
+            )
+
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid user type. Must be 'patient' or 'doctor'"
+            )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Login failed: {str(e)}"
+        )
 
 # ==================== Chat API (Main Agent Interface) ====================
 

@@ -1,9 +1,13 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import axios from 'axios';
 import '../styles/Login.css';
+
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
 
 function Login() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [userType, setUserType] = useState('patient'); // 'patient' or 'doctor'
   const [formData, setFormData] = useState({
     email: '',
@@ -11,24 +15,50 @@ function Login() {
   });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
+
+  // Check for success message from signup
+  useEffect(() => {
+    if (location.state?.message) {
+      setSuccessMessage(location.state.message);
+      // Clear the message after 5 seconds
+      setTimeout(() => setSuccessMessage(''), 5000);
+    }
+  }, [location]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setSuccessMessage('');
     setIsLoading(true);
 
     try {
-      // For now, simulate login (you can add actual authentication later)
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Call backend login API
+      const response = await axios.post(`${API_BASE_URL}/auth/login`, {
+        email: formData.email,
+        password: formData.password,
+        user_type: userType
+      });
 
-      // Navigate based on user type
-      if (userType === 'patient') {
-        navigate('/patient/dashboard');
-      } else {
-        navigate('/doctor/dashboard');
+      if (response.data.success) {
+        // Store user data in localStorage
+        localStorage.setItem('user_email', response.data.user_data.email);
+        localStorage.setItem('user_name', response.data.user_data.name);
+        localStorage.setItem('user_type', userType);
+
+        // Navigate based on user type
+        if (userType === 'patient') {
+          navigate('/patient/dashboard');
+        } else {
+          navigate('/doctor/dashboard');
+        }
       }
     } catch (err) {
-      setError('Login failed. Please check your credentials.');
+      if (err.response?.data?.detail) {
+        setError(err.response.data.detail);
+      } else {
+        setError('Login failed. Please check your credentials.');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -69,6 +99,19 @@ function Login() {
         </div>
 
         <form onSubmit={handleSubmit} className="login-form">
+          {successMessage && (
+            <div className="success-message" style={{
+              padding: '12px',
+              background: '#d4edda',
+              color: '#155724',
+              borderRadius: '8px',
+              marginBottom: '15px',
+              fontSize: '14px'
+            }}>
+              {successMessage}
+            </div>
+          )}
+
           <div className="form-group">
             <label htmlFor="email">Email Address</label>
             <input
@@ -106,21 +149,11 @@ function Login() {
           </button>
 
           <div className="form-footer">
-            <a href="#" className="forgot-password">Forgot password?</a>
-            <span className="separator">|</span>
-            <a href="#" className="create-account">Create account</a>
+            <span>Don't have an account?</span>
+            <a href="/signup" className="create-account">Create account</a>
           </div>
         </form>
 
-        <div className="features-info">
-          <h3>Features</h3>
-          <ul>
-            <li>AI-powered appointment scheduling</li>
-            <li>Real-time doctor availability</li>
-            <li>Email notifications</li>
-            <li>Secure and FREE to use</li>
-          </ul>
-        </div>
       </div>
     </div>
   );

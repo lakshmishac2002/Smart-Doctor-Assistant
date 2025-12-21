@@ -8,11 +8,12 @@ Base = declarative_base()
 
 class Doctor(Base):
     __tablename__ = "doctors"
-    
+
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(255), nullable=False)
     specialization = Column(String(255), nullable=False)
     email = Column(String(255), unique=True, nullable=False, index=True)
+    password = Column(String(255), nullable=False)  # Hashed password
     phone = Column(String(20))
     available_days = Column(ARRAY(String))  # ['Monday', 'Tuesday', ...]
     available_start_time = Column(Time, nullable=False)
@@ -39,10 +40,11 @@ class Doctor(Base):
 
 class Patient(Base):
     __tablename__ = "patients"
-    
+
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(255), nullable=False)
     email = Column(String(255), unique=True, nullable=False, index=True)
+    password = Column(String(255), nullable=False)  # Hashed password
     phone = Column(String(20))
     date_of_birth = Column(Date)
     created_at = Column(TIMESTAMP, server_default=func.now())
