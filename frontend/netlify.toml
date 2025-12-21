@@ -1,0 +1,35 @@
+# Netlify configuration for Smart Doctor Assistant Frontend
+
+[build]
+  # Build command
+  command = "npm run build"
+
+  # Output directory
+  publish = "dist"
+
+  # Environment variables (set these in Netlify UI)
+  # VITE_API_URL = "https://your-backend-url.com/api"
+
+[build.environment]
+  NODE_VERSION = "18"
+
+# Redirect all routes to index.html for React Router
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# Custom headers for security
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    X-XSS-Protection = "1; mode=block"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+
+# Cache static assets
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
