@@ -295,8 +295,42 @@ class AgentOrchestrator:
             for doc in available_doctors
         ])
 
-        # Prepare messages for LLM with context
-        system_prompt = f"""You are an intelligent medical appointment assistant with access to real doctor data and booking tools.
+        # Check if this is a doctor query (session_id starts with "doctor_")
+        is_doctor_query = session_id.startswith("doctor_")
+
+        if is_doctor_query:
+            # System prompt for doctor analytics/reporting
+            system_prompt = f"""You are an intelligent medical analytics assistant for doctors.
+
+{memory_context}
+
+YOUR CAPABILITIES:
+1. Get doctor statistics and appointment data using the get_doctor_stats tool
+2. Analyze patient visit patterns and symptom trends
+3. Answer questions about appointments, patient counts, and common symptoms
+
+AVAILABLE TOOLS:
+- get_doctor_stats: Fetches appointment data for a doctor within a date range
+  Parameters: doctor_name (string), start_date (YYYY-MM-DD), end_date (YYYY-MM-DD)
+
+IMPORTANT GUIDELINES:
+- ALWAYS use get_doctor_stats tool to answer questions about appointments
+- For "today": use today's date for both start_date and end_date
+- For "yesterday": use yesterday's date for both start_date and end_date
+- For "this week": use 7 days ago to today
+- For "this month": use first day of month to today
+- Provide specific numbers from the tool results, not generic responses
+- Extract the doctor's name from the user message (usually starts with "I am [Doctor Name]")
+
+CURRENT DATE: {datetime.now().strftime("%Y-%m-%d")}
+
+When the user asks about their appointments, IMMEDIATELY call get_doctor_stats with:
+1. The doctor's name mentioned in their message
+2. Appropriate date range based on their query
+3. Then present the specific data from the results"""
+        else:
+            # System prompt for patient booking
+            system_prompt = f"""You are an intelligent medical appointment assistant with access to real doctor data and booking tools.
 
 AVAILABLE DOCTORS:
 {doctors_info}
@@ -308,8 +342,8 @@ YOUR CAPABILITIES:
 2. Check specific doctor availability for dates
 3. Book appointments (requires: patient name, email, doctor name, date, time)"""
 
-        # Continue system prompt
-        system_prompt += """
+            # Continue system prompt
+            system_prompt += """
 4. Send email confirmations
 5. Provide doctor statistics
 

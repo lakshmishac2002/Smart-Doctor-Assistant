@@ -542,39 +542,91 @@ async def generate_doctor_report(
 ):
     """
     Generate AI summary report for doctor.
-    
-    Uses agent to process natural language queries like:
+
+    Uses direct stats tool to answer queries like:
     - "How many patients yesterday?"
     - "What are the common symptoms this week?"
+    - "Show me today's appointments"
     """
+    from datetime import timedelta
+
     doctor = db.query(Doctor).filter(Doctor.id == doctor_id).first()
     if not doctor:
         raise HTTPException(status_code=404, detail="Doctor not found")
-    
-    # Create a session for this doctor
-    session_id = f"doctor_{doctor_id}_{datetime.now().timestamp()}"
-    
-    # Process through agent
-    result = await agent.process_message(
-        session_id=session_id,
-        user_message=query,
-        db=db
+
+    # Parse query to determine date range
+    query_lower = query.lower()
+    today = date.today()
+
+    if "today" in query_lower:
+        start_date = today
+        end_date = today
+        time_desc = "today"
+    elif "yesterday" in query_lower:
+        yesterday = today - timedelta(days=1)
+        start_date = yesterday
+        end_date = yesterday
+        time_desc = "yesterday"
+    elif "week" in query_lower or "7 days" in query_lower:
+        start_date = today - timedelta(days=7)
+        end_date = today
+        time_desc = "this week"
+    elif "month" in query_lower:
+        start_date = today.replace(day=1)
+        end_date = today
+        time_desc = "this month"
+    else:
+        # Default to today
+        start_date = today
+        end_date = today
+        time_desc = "today"
+
+    # Call get_doctor_stats directly
+    stats_result = mcp_server.invoke_tool(
+        "get_doctor_stats",
+        {
+            "doctor_name": doctor.name,
+            "start_date": start_date.isoformat(),
+            "end_date": end_date.isoformat()
+        },
+        db
     )
-    
-    # Send notification to doctor
-    if result["success"]:
-        mcp_server.invoke_tool(
-            "send_doctor_notification",
-            {
-                "doctor_email": doctor.email,
-                "notification_type": "report",
-                "title": "Daily Report",
-                "message": result["response"]
-            },
-            db
-        )
-    
-    return result
+
+    if not stats_result.get("success"):
+        return {
+            "success": False,
+            "response": f"Unable to fetch statistics: {stats_result.get('error')}",
+            "tool_calls_made": 1,
+            "iterations": 1
+        }
+
+    # Format the response
+    total = stats_result.get("total_appointments", 0)
+    status_dist = stats_result.get("status_distribution", {})
+    symptoms = stats_result.get("symptom_analysis", {})
+
+    response_text = f"Statistics for Dr. {doctor.name} ({time_desc})\n\n"
+    response_text += f"Total Appointments: {total}\n\n"
+
+    if status_dist:
+        response_text += "Status Breakdown:\n"
+        for status, count in status_dist.items():
+            response_text += f"  - {status.title()}: {count}\n"
+        response_text += "\n"
+
+    if symptoms:
+        top_symptoms = sorted(symptoms.items(), key=lambda x: x[1], reverse=True)[:5]
+        if top_symptoms:
+            response_text += "Common Symptoms:\n"
+            for symptom, count in top_symptoms:
+                response_text += f"  - {symptom}: {count} patients\n"
+
+    return {
+        "success": True,
+        "response": response_text,
+        "tool_calls_made": 1,
+        "iterations": 1
+    }
 
 # ==================== Utility Endpoints ====================
 
@@ -603,3 +655,4 @@ async def check_availability(
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
+

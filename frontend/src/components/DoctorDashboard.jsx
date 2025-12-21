@@ -75,7 +75,7 @@ function DoctorDashboard() {
     <div className="doctor-dashboard-container">
       <div className="dashboard-header">
         <div>
-          <h2>👨‍⚕️ Doctor Dashboard</h2>
+          <h2>Doctor Dashboard</h2>
           <p className="dashboard-subtitle">AI-Powered Analytics & Reports</p>
         </div>
         <div className="doctor-selector">
@@ -98,7 +98,7 @@ function DoctorDashboard() {
           <div className="dashboard-grid">
             {/* Stats Overview */}
             <div className="dashboard-card stats-card">
-              <h3>📊 Statistics Overview</h3>
+              <h3>Statistics Overview</h3>
               <div className="date-range-selector">
                 <input 
                   type="date" 
@@ -159,7 +159,7 @@ function DoctorDashboard() {
 
             {/* Appointments List */}
             <div className="dashboard-card appointments-card">
-              <h3>📅 Recent Appointments</h3>
+              <h3>Recent Appointments</h3>
               
               {loading && <div className="loading-indicator">Loading appointments...</div>}
               
@@ -174,12 +174,12 @@ function DoctorDashboard() {
                         </span>
                       </div>
                       <div className="appointment-details">
-                        <div>📅 {appointment.appointment_date}</div>
-                        <div>🕐 {appointment.appointment_time}</div>
+                        <div>{appointment.appointment_date}</div>
+                        <div>{appointment.appointment_time}</div>
                       </div>
                       {appointment.symptoms && (
                         <div className="appointment-symptoms">
-                          💊 {appointment.symptoms}
+                          {appointment.symptoms}
                         </div>
                       )}
                     </div>
@@ -193,7 +193,7 @@ function DoctorDashboard() {
 
           {/* AI Report Generator */}
           <div className="dashboard-card report-generator-card">
-            <h3>🤖 AI Report Generator</h3>
+            <h3>AI Report Generator</h3>
             <p className="description">
               Ask questions about your appointments and get AI-generated insights using MCP tools
             </p>
@@ -220,24 +220,24 @@ function DoctorDashboard() {
                 rows={3}
                 disabled={loading}
               />
-              <button 
-                onClick={handleGenerateReport} 
+              <button
+                onClick={handleGenerateReport}
                 disabled={loading || !query.trim()}
                 className="generate-btn"
               >
-                {loading ? '⏳ Generating...' : '🚀 Generate Report'}
+                {loading ? 'Generating...' : 'Generate Report'}
               </button>
             </div>
 
             {report && (
               <div className="report-result">
-                <h4>📋 Report Result</h4>
+                <h4>Report Result</h4>
                 <div className="report-content">
                   {report.response}
                 </div>
                 {report.tool_calls_made > 0 && (
                   <div className="report-meta">
-                    🔧 Used {report.tool_calls_made} MCP tool{report.tool_calls_made > 1 ? 's' : ''} 
+                    Used {report.tool_calls_made} MCP tool{report.tool_calls_made > 1 ? 's' : ''}
                     in {report.iterations} iteration{report.iterations > 1 ? 's' : ''}
                   </div>
                 )}
